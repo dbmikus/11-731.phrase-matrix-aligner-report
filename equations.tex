@@ -93,7 +93,9 @@
 % where $c(e)$ counts the number of occurrences of phrase $e$ in training,
 % and $c(e,f)$ counts the number of phrase pairs $(e,f)$ in training.
 \newcommand{\phrasePairNorm}{
-    C(e,f) = \frac{c(e,f)}{c(e)}
+    C(\overline{e},\overline{f})
+      = \frac{c(\overline{e},\overline{f})}
+              {c(\overline{e})}
 }
 
 % This function gets all possible phrases in e, all possible phrases in f, and
@@ -148,6 +150,15 @@
             & \hspace{.4in} 0 \text{ otherwise}
   \end{align*}
 }
+
+
+\newcommand{\intersectMatrix}{
+  \begin{align*}
+    C_{i,j}^{(k)} = & 1 \text{ if } (A_{i,j}^{(k)} = 1) and (B_{i,j}^{(k)} = 1) \\
+                 & 0 \text{ otherwise}
+  \end{align*}
+}
+
 
 % Local Variables:
 % mode: latex
