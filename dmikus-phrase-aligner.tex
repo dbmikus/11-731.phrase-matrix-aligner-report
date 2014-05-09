@@ -57,6 +57,7 @@
 \end{center}
 \begin{quotation}
   \small{
+    \textbf{TODO finish this!}
     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam et accumsan
     purus, eu auctor quam. Pellentesque auctor nibh sem, sed convallis neque
     eleifend nec. Vestibulum vel sapien id nibh pharetra ultrices. Maecenas
@@ -310,8 +311,9 @@ negligible effect on the BLEU score, but it should at least still decrease the
 size of our phrase table without much harm to future decoding. This has the
 potential to speed up the decoding process for phrase-based translation.
 
-For our development and test set, we use unique corpora within the Workshop on
-Statistical Machine Translation 20012 dataset, available at
+For our test set, we use unique corpora within
+The Workshop on Statistical Machine Translation 2012 dataset,
+available at
 \href{http://www.statmt.org/wmt12/dev.tgz}
      {\underline{www.statmt.org/wmt12}}.
 
@@ -359,17 +361,18 @@ and the traditional lexical alignment matrix.
     ``Une r\'{e}ponse est bien s\^{u}r un effondrement complet du dollar .''
   \end{center}
   \caption{Example word alignment matrices for different alignment methods.}
+  \label{fig:alignMatrices}
 \end{figure*}
 
 \begin{table*}[tbp]
   \begin{center}
     \begin{tabular}{| l | l | l | l |}
       \hline
-      Method                  & Result Name & BLEU Score & Phrase Table Size \\
+      Method  &  Test File Name  &  BLEU Score  &  Phrase Table Size \\
       \hline
-      \originalAlign{}        & 1           & 2          & 3                 \\
+      \originalAlign{} (baseline)  &  newstest2010  &  18.11  &  2,105,246 \\
       \hline
-      \phraseIntersectAlign{} & 4           & 5          & 6                 \\
+      \phraseIntersectAlign{}  &  newstest2010  &  18.11  &  2,174,330 \\
       \hline
     \end{tabular}
   \end{center}
@@ -423,26 +426,148 @@ The we simply define the matrix $C^{(k)}$ for \phraseIntersectAlign{}
 as the intersection of $A^{(k)}$ and $B^{(k)}$:
 \wrapSmall{\intersectMatrix{}}
 
-
 If you wish to see the code for this algorithm, please refer to
 the function \verb!phrase_alignment(f, e, tm, k)!
 in the file \verb!align_from_phrases.py!.
 You can locate this content at
 \href{https://github.com/dbmikus/11-731.phrase-matrix-aligner}
-     {\underline{https://github.com/dbmikus/11-731.phrase-matrix-aligner}}.
+     {\wrapSmall{\underline{https://github.com/dbmikus/11-731.phrase-matrix-aligner}}}.
 
-\section{Experiments}
+\section{Experiments and Results}
+\subsection{Experimental Setup and Process}
 We used a training corpus from
 \href{http://www.statmt.org/wmt13/training-parallel-nc-v8.tgz}
      {\underline{www.statmt.org/wmt13}}.
-This contained TODO numSentences of English and French sentence pairs.
+This news commentary corpus consists of over 100,000 (English, French) parallel
+sentences.
+We initially limited the corpus to 100,000 parallel sentences, but the
+combined required computing power to store the translation model and find
+optimal (English, French) phrase-based coverage vectors took far too long.
+Then we truncated the parallel sentence corpus to 25,000 sentences.
+As part of the Moses SMT pipeline, we tokenized and cleaned the input, limiting
+maximum sentence length to 80 words. This reduced the size of the training
+corpus by a small amount.
+Training on a corpus of this size ran in reasonable time. Note that
+Pal et al. \cite{pnb2013},
+who ran a related experiment, also uses a relatively small training corpus,
+containing 22,492 parallel sentences. This may be due to their use of (Bengali,
+English) pairing, or it may also stem from performance reasons, but it is worth
+noting.
 
-Pal et al. \cite{pnb2013} also uses a relatively small training corpus,
-containing 22,492 parallel sentences. This may be due to their use of
-(Bengali, English) pairing, or it may also stem from performance reasons.
+For evaluation we used a test corpus of English and French parallel sentences
+from The Workshop on Statistical Machine Translation 2012. We used 3,003
+sentence pairs.
 
+We used a 3-gram language model, and limited phrase length to a maximum of 4
+words per phrase. In the translation model,
+for each French phrase $\overline{f}$, we
+limited the size of the possible cooresponding English phrases to the maximum
+integer size on our machine, which was a very large number. Needless to say,
+this did not appear to be a restricting value.
+
+Due to performance issues and the computational complexity of finding the
+optimal set of French and English phrases to cover a parallel sentence pair
+$(f, e)$, we had to impose some restrictions on the phrase-alignment generator.
+We only searched for a phrase-based alignment if a sentence was under 20 tokens
+long.
+Also, for a given sentence, when we generated the list
+\texttt{alignments}, with \texttt{alignments[i]} being
+an inner list of all the phrases in $f$ that could have generated phrases
+starting at position \texttt{i} in $e$, we limited the number French phrases per
+English starting point to the 500 most probable.
+With these parameters, the training and evaluation ran in a reasonable time.
+
+
+\subsection{Results}
+Interestingly, the BLEU scores for \originalAlign{} and \phraseIntersectAlign{}
+were both 18.11. And contrary to our hypothesis, the phrase table generated from
+the \phraseIntersectAlign{} matrices was just under 70,000 entries larger than
+the phrase table from \originalAlign{}. This could be because outlying points in
+the original alignment matrices interfered with certain phrase possibilities,
+rendering those phrases inconsistent. When we removed these points, perhaps we
+were able to extract a greater number of consistent phrases.
+Refer to \ref{table:expResults} for the experimental results breakdown.
+
+%% NUMBER of correctly aligned = 4572
+%% NUMBER unable to align = 1940
+%% NUMBER too long, so fast aligned = 18211
+%% NUMBER of total sentences = 24723
+%% NUMBER matrix alignment points removed = 4300
+In the training set, we had 24,723 sentence pairs.
+\begin{itemize}
+  \item 73.66\% of the sentences were too long for us to re-align using phrases.
+  \item Of the remaining 26.34\% of the sentence pairs, we were able to
+    successfully re-align sentence pairs 70.21\% of the time
+  \item 18.49\% of the total sentence pairs could be successfully re-aligned
+    based on phrases
+\end{itemize}
+This data indicates that about 3/4 of the sentence pairs in the training corpus
+did not pass through the attempt at phrase-based alignment. As stated above, we
+did try to increase the limit on maximum sentence length, but we ran into
+performance issues.
+
+The intersection between \originalAlign{} and \phraseAlign{} removed, in total,
+4,300 points that were aligned by \originalAlign{} matrices. Overall, it
+appeared that \phraseAlign{} tended to align strongly along the diagonal, so the
+intersection could drop alignment points that were further from the
+diagonal. See \ref{fig:alignMatrices} for an example of the three alignment
+matrices.
+
+Looking at the phrase tables,
+let $PT_1$ be the table generated from \originalAlign{}
+and $PT_2$ be the table generated from \phraseIntersectAlign{}.
+\begin{itemize}
+  \item $|PT_1| = 2,105,246$
+  \item $|PT_2| = 2,174,330$
+  \item $|PT_1 \cap PT_2| = 2,104,072$
+  \item $|PT_1 \cup PT_2| = 2,175,504$
+  \item $|PT_1 - PT_2| = 1,174$
+  \item $|PT_2 - PT_1| = 70,258$
+\end{itemize}
+
+%% Yes - I suggested measuring the impact on the phrase tables by looking at the
+%% fraction of phrases that are in the intersection, and also the fraction of
+%% phrases that are in one system but not in the other.  You can do this
+%% globally, on the entire phrase table, or you can do this at the level of the
+%% phrases available for decoding individual sentences in the test set (or
+%% accumulate the stats for the entire test set).  The latter is likely more
+%% difficult to implement.
+
+%% Your idea of running statistics on the fraction of alignment cells that are
+%% removed when intersecting the matrices is also a good idea.
+
+%% Given that time is very limited at this point, I think the above would be
+%% sufficient.
+
+%% Looking forward to seeing your final results and reading your report!
 
 \section{Conclusion}
+From the results of our experiment, we cannot conclude that the
+\phraseIntersectAlign{} method for generating word alignment improves any
+translation results. In fact, given the performance hit that a system undergoes
+by adding this additional component to the training system, one could conclude
+that the results of the \phraseIntersectAlign{} method are negative.
+However, there are a few obvious improvements to implement that could lead to
+more comprehensive data and testing. In future experiments, we must improve the
+speed the algorithm that attempts to create a fully covered mapping between
+given $(f, e)$ pairs. The current algorithm performs a rather exhaustive search
+on the sentence pair to find the optimal phrase-based alignment. It uses dynamic
+programming to backtrack and find the most probable set of phrase pairs that
+lead to a given English prefix and French coverage vector.
+We could instead employ some heuristics and make the alignment a little more
+fuzzy, perhaps choosing the most probable phrase starting at the first index,
+then the most probable phrase starting at the point after that, and so on,
+filling in the gaps with lexical alignment values from \originalAlign{}.
+
+If we could speed up the \phraseAlign{} method, then we would be able to run
+\phraseAlign{} on larger sentences and larger corpera. Given the limited
+percentage of the corpus that \phraseAlign{} ran on, it is possible that the
+method either improved or decreased the BLEU score, but any changes were small
+enough to be drowned out by the number of sentences for which we fell back to
+the standard \originalAlign{} alignment method. Given the success of
+similar research by Pal et al. \cite{pnb2013}, with a combined unsupervised and
+semi-supervised alignment system, it should be worth it to investigate improving
+the algorithms and methods outlined in this report.
 
 
 \begin{thebibliography}{99}
