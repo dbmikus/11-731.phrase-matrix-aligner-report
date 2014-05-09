@@ -1,0 +1,154 @@
+% English Reference Grammar
+% By Dylan B. Mikus
+% Spring 2014: 11-731
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{amsthm, amsmath}
+% defining variables
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+% These are the commands that we load in and use elsewhere
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% These functions are for the grow-diag-final-and algorithm %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\wrapSmall}[1]{
+  \small
+  #1
+  \normalsize
+}
+
+% This function says that a spot (i,j) is aligned if it has some neighbor
+% aligned and if the spot is aligned in either of the alignment vectors.
+% As such, it is recursively defined.
+\newcommand{\isAlignedFromGrow}{
+  \begin{align*}
+    g(A^{(k)}, & a^{(k)}, b^{(k)}, i, j) = \\
+    & A^{(k)}_{i,j}
+    \text{ if } (a_i^{(k)} = j
+    \text{ or } b_j^{(k)} = i), \\
+    & 0 \text{ otherwise}
+  \end{align*}
+}
+
+% This function just computes all neighboring points (including diagonals) on a
+% square grid.
+\newcommand{\neighborsFunc}{
+  \begin{align*}
+    \texttt{neighbors}(i, j) = &
+     \{
+           \langle i-1, j   \rangle,
+           \ \langle i  , j-1 \rangle,
+           \ \langle i+1, j   \rangle,
+           \ \langle i  , j+1 \rangle, \\
+         & \langle i-1, j-1 \rangle,
+           \ \langle i-1, j+1 \rangle,
+           \ \langle i+1, j-1 \rangle, \\
+         & \ \langle i+1, j+1 \rangle
+     \}
+  \end{align*}
+}
+
+% This function evaluates to true (1) if the given matrix point is in the
+% intersection of the two alignment vectors.
+% If the point is not in the intersection, then it evaluates to true (1)
+% if the matrix point has some neighbor that is aligned, and that point is also
+% in the union of the two alignment vectors (i.e., `g` evaluates to true), then
+% we return true, otherwise we return false (0).
+\newcommand{\isAlignedFromInterOrGrow}{
+  \begin{align*}
+    f(A^{(k)}, & a^{(k)}, b^{(k)}, i, j) = \\
+      1 \text{ if }
+         & (a_i^{(k)} = j \text{ and } b_j^{(k)} = i), \\
+      \text{else } & \texttt{min}(1,
+        \ |\{ \langle i', j' \rangle\ :\ i',j'
+            \in \texttt{neighbors}(i,j) \\
+         &~~~~ \text{ and } g(A^{(k)}, a^{(k)}, b^{(k)}, i', j') = 1 \}|)
+  \end{align*}
+}
+
+
+\newcommand{\growDiagMatrix}{
+  \begin{align*}
+    A^{(k)}_{i,j} = \text{ case } & f(A^{(k)}, a^{(k)}, b^{(k)}, i, j) \text{ of } \\
+        & 1 \Longrightarrow 1 \\
+        & 0 \Longrightarrow (1 \text{ if } a^{(k)}_i = j
+                               \text{ or } b^{(k)}_j = i)
+  \end{align*}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% These functions are for the phrase-based-align algorithm %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Creates a sequence with the middle elements collapsed.
+\newcommand{\seqSpan}[2]{
+  \langle #1 \cdots #2 \rangle
+}
+
+% where $c(e)$ counts the number of occurrences of phrase $e$ in training,
+% and $c(e,f)$ counts the number of phrase pairs $(e,f)$ in training.
+\newcommand{\phrasePairNorm}{
+    C(e,f) = \frac{c(e,f)}{c(e)}
+}
+
+% This function gets all possible phrases in e, all possible phrases in f, and
+% the normalized frequency counts for those phrase pairs.
+\newcommand{\allPhrasePairs}{
+  \begin{align*}
+    P =
+      \large\{
+        (e_i, & e_j, f_m, f_n,
+          C(\seqSpan{e_i}{e_j},\ \seqSpan{f_m}{f_n})) \\
+        \ &:\ 0 \leq i \leq j \leq \texttt{len}(e),
+           \ 0 \leq m \leq n \leq \texttt{len}(f)
+      \large\}
+  \end{align*}
+}
+
+% This evaluates to the most probable set of phrase pairs that cover the
+% entirety of the source sentence f and the target sentence e.
+\newcommand{\optPhraseCoverage}{
+\begin{align*}
+    h(e,f&) = \\
+    & Q \subset P \text{ such that } \forall x_1, x_2 \in Q \text{ where } \\
+        & \hspace{0.35in} x_1 = (e_i, e_j, f_m, f_n, C(\seqSpan{e_i}{e_j},
+                                    \seqSpan{f_m}{f_n})) \\
+        & \hspace{0.35in} x_2 = (e'_i, e'_j, f'_m, f'_n, C(\seqSpan{e'_i}{e'_j},
+                                        \seqSpan{f'_m}{f'_n})), \\
+        & \hspace{0.2in} (\seqSpan{e_i}{e_j}
+                                        \cap \seqSpan{e'_i}{e'_j} = \emptyset \\
+        & \hspace{0.2in} \text{ and } \seqSpan{f_m}{f_n}
+                                        \cap \seqSpan{f'_m}{f'_n} = \emptyset) \\
+        & \hspace{0.05in} \text{ and such that }
+              \forall y \in \seqSpan{e_0}{\texttt{len}(e)},
+              \forall z \in \seqSpan{f_0}{\texttt{len}(f)} \\
+        & \hspace{0.35in} \exists x_3 \in Q, x_3 = (e''_i, e''_j, f''_m, f''_n,
+                                 C(\seqSpan{e''_i}{e''_j},
+                                   \seqSpan{f''_m}{f''_n})) \\
+        & \hspace{0.45in} \text{ such that } e''_i \leq y \leq e''_j, f''_m \leq z \leq f''_n \\
+        \vspace{0.5in}
+        & \argmax_{Q \subset P} ( Q \text{ for } \sum_{q \in Q} q.\texttt{prob} )
+  \end{align*}
+}
+
+
+\newcommand{\growPhraseMatrix}{
+  \begin{align*}
+    B_{i,j}^{(k)} = \text{ case } & h(e,f) \text{ of } \\
+        & \emptyset \Longrightarrow A_{i,j}^{(k)} \\
+        & Q \Longrightarrow 1 \text{ if } \exists x \text{ where }
+            x = (\langle e_a, e_b \rangle,
+                 \langle f_c, f_d \rangle, p) \\
+            & \hspace{.5in} \text{ such that } a \leq i \leq b \text{ and } c \leq j \leq d \\
+            & \hspace{.4in} 0 \text{ otherwise}
+  \end{align*}
+}
+
+% Local Variables:
+% mode: latex
+% End:

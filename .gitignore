@@ -1,0 +1,9 @@
+# Ignoring Emacs temporary files
+*~
+*.#*
+
+# Ignoring TeX output files
+*.aux
+*.log
+*.out
+*.pdf
