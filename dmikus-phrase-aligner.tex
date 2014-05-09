@@ -7,6 +7,7 @@
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage[utf8]{inputenc}
+\usepackage{fancyvrb}
 
 % Packages for formatting page, paragraph, and line layout/spacing
 \usepackage{setspace}
@@ -19,8 +20,11 @@
 % defining variables
 \setlength{\columnsep}{0.25in}
 \setlength{\parskip}{1mm}
-\onehalfspacing
-% \doublespacing
+
+\newcommand{\linespacing}{
+  \onehalfspacing
+  % \doublespacing
+}
 
 % All of our custom commands and environments
 \input{equations.tex}
@@ -30,7 +34,7 @@
 \newcommand{\wrapSingleSpacing}[1]{
   \singlespacing
   #1
-  \onehalfspacing
+  \linespacing{}
 }
 
 
@@ -150,12 +154,12 @@ neighbor and if the cell is aligned in either of the alignment vectors
 $a^{(k)}$ or $b^{(k)}$.
 As such, it is recursively defined based on following functions.
 \wrapSmall{\isAlignedFromGrow{}}
-%
-%
+
+
 This function just computes all neighboring points (including diagonals) in a
 matrix.
 \wrapSmall{\neighborsFunc{}}
-%
+
 $f$ evaluates to 1 if the given matrix point is in the
 intersection of the two alignment vectors.
 If the point is not in the intersection, then it evaluates to 1
@@ -163,7 +167,7 @@ if the matrix point has some neighbor that is aligned, and that point is also
 in the union of the two alignment vectors (i.e., `g` evaluates to 1), then
 we return 1, otherwise we return 0.
 \wrapSmall{\isAlignedFromInterOrGrow{}}
-%
+
 Ultimately, we define each cell in the matrix such that
 the cell evaluates to 1 if the it is in the
 intersection of both alignment vectors, if it is not in the intersection but is
@@ -172,11 +176,41 @@ cell, or finally if the spot was not yet aligned but is in the union of the two
 alignment vectors. This has the effect of preferring alignments grown from the
 intersection before finally falling back on the union of alignments.
 \wrapSmall{\growDiagMatrix{}}
-%
-%
+
+
 So, the algorithm starts with the intersection of the alignment vectors, and
 then grows out to neighbors that are aligned in the union of the two vectors,
 $a^{(k)}$ and $b^{(k)}$.
+
+For pseudocode for \originalAlign{}, see figure \ref{fig:growDiagPseudo}.
+
+\begin{figure*}[t]
+\begin{Verbatim}[frame=single]
+GROW-DIAG-FINAL(e2f,f2e):
+  neighboring = ((-1,0),(0,-1),(1,0),(0,1),
+                 (-1,-1),(-1,1),(1,-1),(1,1))
+  alignment = intersect(e2f,f2e);
+  GROW-DIAG(); FINAL(e2f); FINAL(f2e);
+
+ GROW-DIAG():
+  iterate until no new points added
+    for english word e = 0 ... en
+      for foreign word f = 0 ... fn
+        if ( e aligned with f )
+          for each neighboring point ( e-new, f-new ):
+            if ( ( e-new not aligned or f-new not aligned ) and
+                 ( e-new, f-new ) in union( e2f, f2e ) )
+              add alignment point ( e-new, f-new )
+ FINAL(a):
+  for english word e-new = 0 ... en
+    for foreign word f-new = 0 ... fn
+      if ( ( e-new not aligned or f-new not aligned ) and
+           ( e-new, f-new ) in alignment a )
+        add alignment point ( e-new, f-new )
+\end{Verbatim}
+\caption{Pseudocode for \originalAlign{}}
+\label{fig:growDiagPseudo}
+\end{figure*}
 
 %% \subsection{Prior Work}
 
@@ -276,6 +310,8 @@ $e_j$, then we align every word in $f_i$ to every word in $e_j$. We define the
 final alignment matrix as the intersection of this phrase-based alignment matrix
 and the traditional lexical alignment matrix.
 
+
+\subsection{Generating New Alignment Matrices}
 Simply put, \phraseAlign{} finds the most probable set of
 (English prefix, French coverage vector) pairs that covers all of the English
 sentence $e$ and the French sentence $f$. The algorithm then aligns all words to
@@ -291,7 +327,7 @@ Specifically, the \phraseAlign{} algorithm works as follows:
 where $c(\overline{e})$ counts the number of occurrences of phrase
 $\overline{e}$ in training,
 and $c(\overline{e},\overline{f})$ counts the number of phrase pairs
-$(\overline{e},\overline{f})$ in training.
+$(\overline{e},\overline{f})$ in training. \\
 
 We then compute the set, $P$, of all possible phrase pairs for $e$ and $f$,
 along with the normalized frequencies for those phrase pairs.
@@ -316,11 +352,13 @@ The we simply define the matrix $C^{(k)}$ for \phraseIntersectAlign{}
 as the intersection of $A^{(k)}$ and $B^{(k)}$:
 \wrapSmall{\intersectMatrix{}}
 
-\subsection{Generating New Alignment Matrices}
 
-
-\subsection{Method of Evaluation}
-
+If you wish to see the code for this algorithm, please refer to
+the function \verb!phrase_alignment(f, e, tm, k)!
+in the file \verb!align_from_phrases.py!.
+You can locate this content at
+\href{https://github.com/dbmikus/11-731.phrase-matrix-aligner}
+     {\underline{https://github.com/dbmikus/11-731.phrase-matrix-aligner}}.
 
 \section{Experiments}
 
