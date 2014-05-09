@@ -8,6 +8,7 @@
 \usepackage{url}
 \usepackage[utf8]{inputenc}
 \usepackage{fancyvrb}
+\usepackage{graphicx}
 
 % Packages for formatting page, paragraph, and line layout/spacing
 \usepackage{setspace}
@@ -121,6 +122,21 @@ normalized. Then an IBM model or hidden Markov model for word alignment uses the
 language model to align words from source sentences to target sentences and vice
 versa. Traditionally, one then applies heuristics on top of these two alignments
 to generate a final alignment matrix.
+Most alignment methods use an unsupervised approach, employing software such as
+Giza++.
+
+There has also been work with semi-supervised models, such as work by
+Pal et al. \cite{pnb2013}, which uses named-entity taggers to align named
+entities to one another, and then creates chunks based on grammatical
+rules. They attempt to align the chunks to one another using fuzzy matching on a
+baseline SMT model. After aligning chunks, words within chunks matching chunks
+are aligned to each other. This is quite similar to our method, but employs
+grammatical rules instead of strictly unsupervised phrase-based translation, and
+it uses fuzzy matching instead of an exact and non-overlapping set of
+(source, target) phrase pairs. The experiment saw significant improvement in
+the BLEU score from the baseline using Giza++ and
+\originalAlign{}. \cite{pnb2013}.
+
 % mathematical model for word alignment translation and stuff
 For a given target sentence $e$ of length $m$, source sentence $f$ of length
 $n$, and alignment $a$ from $f$ to $e$ for every $e_i \in e$, the probability of
@@ -133,7 +149,7 @@ Then for the max alignment vector $a$ combined with the language model results
 according to the alignment, we can use $a$ to make our alignment
 matrix. Typically, we will generate alignments from $f$ to $e$ and from $e$ to
 $f$ and then apply a heuristic somehow combining these alignments.
-For more information on phrase-based MT, Koehn et al \cite{kom2003}'s paper
+For more information on phrase-based MT, Koehn et al. \cite{kom2003}'s paper
 gives a more substantial description of all the steps involved.
 
 For our project, we use the Moses phrase-based MT system to run the components
@@ -280,9 +296,14 @@ concern ourselves with the difference between the BLEU score from using Moses
 phrase-based translation with alignment matrices generated from \originalAlign{}
 and the BLEU score from using Moses phrase-based translation with alignment
 matrices generated from \phraseIntersectAlign{}.
+
 To dig a little deeper and gain empirical data that can help us understand our
 results, we will also look at the differences in the phrase tables and alignment
-matrices. It is our hypothesis that \phraseIntersectAlign{} will remove outlying
+matrices. We will use the phrase-table size information in the above list, as
+well as computing the fraction of alignment points removed from the
+\originalAlign{} by intersecting with \phraseIntersectAlign{}.
+
+It is our hypothesis that \phraseIntersectAlign{} will remove outlying
 points that never happen to fall into the most common or probable phrases. This
 may have a positive effect on the overall BLEU score, or it might have a
 negligible effect on the BLEU score, but it should at least still decrease the
@@ -309,6 +330,56 @@ alignment matrix using the following idea: if phrase $f_i$ is aligned to phrase
 $e_j$, then we align every word in $f_i$ to every word in $e_j$. We define the
 final alignment matrix as the intersection of this phrase-based alignment matrix
 and the traditional lexical alignment matrix.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Figures from experiments %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{figure*}[tbp]
+  \setlength{\tabcolsep}{12pt}
+  \begin{tabular}{c c c}
+      \includegraphics[scale=0.4]{imgs/grow-diag-final-and-align.png}
+    & \includegraphics[scale=0.4]{imgs/phrase-align.png}
+    & \includegraphics[scale=0.4]{imgs/phrase-intersect-align.png} \\
+    %
+      \originalAlign{}
+    & \phraseAlign{}
+    & \phraseIntersectAlign{}
+  \end{tabular}
+  \begin{center}
+    Rows are English words.
+
+    Columns are French words.
+
+    English sentence is:
+    ``One answer , of course , is a complete collapse of the US dollar .''
+
+    French sentence is:
+    ``Une r\'{e}ponse est bien s\^{u}r un effondrement complet du dollar .''
+  \end{center}
+  \caption{Example word alignment matrices for different alignment methods.}
+\end{figure*}
+
+\begin{table*}[tbp]
+  \begin{center}
+    \begin{tabular}{| l | l | l | l |}
+      \hline
+      Method                  & Result Name & BLEU Score & Phrase Table Size \\
+      \hline
+      \originalAlign{}        & 1           & 2          & 3                 \\
+      \hline
+      \phraseIntersectAlign{} & 4           & 5          & 6                 \\
+      \hline
+    \end{tabular}
+  \end{center}
+  \caption{Experiment numerical results}
+  \label{table:expResults}
+\end{table*}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Done with figures from experiments %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 \subsection{Generating New Alignment Matrices}
@@ -361,12 +432,19 @@ You can locate this content at
      {\underline{https://github.com/dbmikus/11-731.phrase-matrix-aligner}}.
 
 \section{Experiments}
+We used a training corpus from
+\href{http://www.statmt.org/wmt13/training-parallel-nc-v8.tgz}
+     {\underline{www.statmt.org/wmt13}}.
+This contained TODO numSentences of English and French sentence pairs.
+
+Pal et al. \cite{pnb2013} also uses a relatively small training corpus,
+containing 22,492 parallel sentences. This may be due to their use of
+(Bengali, English) pairing, or it may also stem from performance reasons.
 
 
 \section{Conclusion}
 
 
-\section*{References}
 \begin{thebibliography}{99}
   \bibitem{wuwang2007}
     Wu, Hua and Wang, Haifeng
@@ -400,6 +478,14 @@ You can locate this content at
     (2013).
     Phrase-Based Translation Models.
     From Columbia University CS Department.
+
+  \bibitem{pnb2013}
+    Pal, Santanu and Naskar, Sudip Kumar and Bandyopadhyay, Sivaji
+    (2013).
+    A Hybrid Word Alignment Model for Phrase-Based Statistical Machine
+    Translation.
+    In \emph{Proceedings of the Second Workshop on Hybrid Approaches to
+      Translation}.
 \end{thebibliography}
 \end{document}
 
