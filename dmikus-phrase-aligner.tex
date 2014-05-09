@@ -186,7 +186,7 @@ $a^{(k)}$ and $b^{(k)}$.
 \subsection{Translation Model}
 We use the standard phrase-based translation model and a lexical language
 model (see above for the language model).
-Using Bayes rule, we can rewrite the probabilty for translating from a
+Using Bayes rule, we can rewrite the probability for translating from a
 foreign sentence $f$ to a target sentence $e$ as:
 \[
   \argmax_e p(e|f) = \argmax_e p(f|e) p_{\text{LM}}(e)
@@ -279,7 +279,7 @@ and the traditional lexical alignment matrix.
 Simply put, \phraseAlign{} finds the most probable set of
 (English prefix, French coverage vector) pairs that covers all of the English
 sentence $e$ and the French sentence $f$. The algorithm then aligns all words to
-one another within cooresponding (English, French) pairs. However, if we are
+one another within corresponding (English, French) pairs. However, if we are
 unable to cover the entirety of $e$ and $f$, we fall back to the original
 alignment from \originalAlign{}. Furthermore, for performance reasons, if a
 French sentence is over a certain length, we fall back to the original alignment
