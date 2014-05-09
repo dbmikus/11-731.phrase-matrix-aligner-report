@@ -57,19 +57,22 @@
 \end{center}
 \begin{quotation}
   \small{
-    \textbf{TODO finish this!}
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam et accumsan
-    purus, eu auctor quam. Pellentesque auctor nibh sem, sed convallis neque
-    eleifend nec. Vestibulum vel sapien id nibh pharetra ultrices. Maecenas
-    feugiat  magna turpis, eu venenatis nulla ultricies vel. Proin et enim id
-    eros rutrum  tempus sit amet a orci. Duis cursus magna in quam fringilla
-    cursus. Nulla sed  mauris sit amet metus dignissim viverra in placerat
-    nisl. Suspendisse congue  libero ultricies, congue metus eu, iaculis
-    orci. Sed sollicitudin tincidunt venenatis. Suspendisse nisi nisi, rhoncus
-    in erat at, ultrices pharetra lectus. Vivamus vestibulum, quam feugiat
-    pharetra vestibulum, nisi tellus auctor odio, et tempor purus mauris vel
-    urna. Duis ut aliquet ante. Fusce non felis lobortis, iaculis sapien a,
-    viverra eros. Nam bibendum metus ac velit rhoncus condimentum.
+    This report proposes a new word alignment model for phrase-based
+    translation. Traditionally, when generating our phrase table during
+    training, we align words based on a lexical model with some applied
+    heuristics (using GIZA++, for example). The phrase-based MT system then uses
+    these alignment matrices to generate a phrase table.
+    We propose an alignment method called \phraseIntersectAlign{} that runs a
+    standard word alignment algorithm, but then attempts to re-align words based
+    on the phrase-table output from the first alignment, and then intersect
+    these two alignment matrices. We find the optimal set of phrase pairs that
+    cover an entire (source, target) sentence pair, and then align every word
+    within a source phrase to every word in its corresponding target phrase.
+    We use Moses for conducting experiments, and all other phrase-based MT steps
+    remain standard. Our new system does not show any improvement or decline in
+    BLEU score, but given the room for improvement and similar promising
+    research, it is possible that this approach can net positive results with
+    future work.
   }
 \end{quotation}
 
@@ -100,7 +103,12 @@ For our experiments, we use parallel corpus data from the
 \href{http://www.statmt.org/wmt13/training-parallel-nc-v8.tgz}
      {\underline{www.statmt.org/wmt13}}
 Workshop on Statistical Machine Translation.
-Our experiments show that \textbf{TODO what do they show us?}
+Our experiments show that no perceivable improvement in BLEU score, but also no
+degradation of BLEU score. Given the additional runtime imposed by re-aligning
+based on phrases, we consider this a negative result, but believe that there is
+room for improvement in both the runtime speed of training under the
+\phraseIntersectAlign{} method, and potentially for the overall translation
+accuracy.
 
 
 \section{Background}
@@ -199,7 +207,7 @@ So, the algorithm starts with the intersection of the alignment vectors, and
 then grows out to neighbors that are aligned in the union of the two vectors,
 $a^{(k)}$ and $b^{(k)}$.
 
-For pseudocode for \originalAlign{}, see figure \ref{fig:growDiagPseudo}.
+For pseudo-code for \originalAlign{}, see figure \ref{fig:growDiagPseudo}.
 
 \begin{figure*}[t]
 \begin{Verbatim}[frame=single]
@@ -225,7 +233,7 @@ GROW-DIAG-FINAL(e2f,f2e):
            ( e-new, f-new ) in alignment a )
         add alignment point ( e-new, f-new )
 \end{Verbatim}
-\caption{Pseudocode for \originalAlign{}}
+\caption{Pseudo-code for \originalAlign{}}
 \label{fig:growDiagPseudo}
 \end{figure*}
 
@@ -461,7 +469,7 @@ sentence pairs.
 We used a 3-gram language model, and limited phrase length to a maximum of 4
 words per phrase. In the translation model,
 for each French phrase $\overline{f}$, we
-limited the size of the possible cooresponding English phrases to the maximum
+limited the size of the possible corresponding English phrases to the maximum
 integer size on our machine, which was a very large number. Needless to say,
 this did not appear to be a restricting value.
 
@@ -560,7 +568,7 @@ then the most probable phrase starting at the point after that, and so on,
 filling in the gaps with lexical alignment values from \originalAlign{}.
 
 If we could speed up the \phraseAlign{} method, then we would be able to run
-\phraseAlign{} on larger sentences and larger corpera. Given the limited
+\phraseAlign{} on larger sentences and larger corpora. Given the limited
 percentage of the corpus that \phraseAlign{} ran on, it is possible that the
 method either improved or decreased the BLEU score, but any changes were small
 enough to be drowned out by the number of sentences for which we fell back to
